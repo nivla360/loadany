@@ -38,6 +38,8 @@ class LoadAny extends StatefulWidget {
   ///CustomScrollView
   final CustomScrollView child;
 
+  final VoidCallback initialApiCall;
+
   ///到底部才触发加载更多
   final bool endLoadMore;
 
@@ -65,6 +67,7 @@ class LoadAny extends StatefulWidget {
     required this.initialLoaderBuilder,
     required this.child,
     required this.onLoadMore,
+    required this.initialApiCall,
     this.endLoadMore = true,
     this.bottomTriggerDistance = 200,
     this.footerHeight = 40,
@@ -79,6 +82,14 @@ class LoadAny extends StatefulWidget {
 }
 
 class _LoadAnyState extends State<LoadAny> {
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    widget.initialApiCall();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     ///添加 Footer Sliver
