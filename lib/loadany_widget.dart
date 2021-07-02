@@ -7,24 +7,33 @@ typedef LoadMoreCallback = Future<void> Function();
 typedef LoadMoreBuilder = Widget? Function(
     BuildContext context, LoadStatus status);
 
+//for initial loading before load more
+typedef InitialLoaderBuilder = Widget Function(
+    BuildContext context, LoadStatus initialStatus);
+
 ///加载状态
 enum LoadStatus {
-  normal, //正常状态
+  idle, //正常状态
   error, //加载错误
   loading, //加载中
+  noInternet,
   completed, //加载完成
+  initialLoadSuccess, //use for only initial load
+  initialLoadEmpty, //use for only initial load
 }
 
 ///加载更多 Widget
 class LoadAny extends StatefulWidget {
   ///加载状态
-  final LoadStatus status;
+  final LoadStatus status,initialStatus;
 
   ///加载更多回调
   final LoadMoreCallback onLoadMore;
 
   ///自定义加载更多 Widget
   final LoadMoreBuilder? loadMoreBuilder;
+
+  final InitialLoaderBuilder initialLoaderBuilder;
 
   ///CustomScrollView
   final CustomScrollView child;
@@ -52,15 +61,17 @@ class LoadAny extends StatefulWidget {
 
   LoadAny({
     required this.status,
+    required this.initialStatus,
+    required this.initialLoaderBuilder,
     required this.child,
     required this.onLoadMore,
     this.endLoadMore = true,
     this.bottomTriggerDistance = 200,
     this.footerHeight = 40,
     this.loadMoreBuilder,
-    this.loadingMsg = '加载中...',
-    this.errorMsg = '加载失败，点击重试',
-    this.finishMsg = '没有更多了',
+    this.loadingMsg = 'Loading...',
+    this.errorMsg = 'An error occurred，try again',
+    this.finishMsg = 'You have reached the end',
   });
 
   @override
@@ -90,17 +101,18 @@ class _LoadAnyState extends State<LoadAny> {
         ),
       ),
     );
-    return NotificationListener<ScrollNotification>(
+
+    return widget.initialStatus == LoadStatus.initialLoadSuccess ? NotificationListener<ScrollNotification>(
       onNotification: _handleNotification,
       child: widget.child,
-    );
+    ) : widget.initialLoaderBuilder(context, widget.initialStatus);
   }
 
   ///构建加载更多 Widget
   Widget _buildLoadMore(LoadStatus status) {
     ///检查返回自定义状态
     if (widget.loadMoreBuilder != null) {
-      Widget? loadMore = widget.loadMoreBuilder!(context, status);
+     final Widget? loadMore = widget.loadMoreBuilder!(context, status);
       if (loadMore != null) {
         return loadMore;
       }
@@ -234,7 +246,7 @@ class _LoadAnyState extends State<LoadAny> {
 
   ///处理加载更多
   bool _checkLoadMore(bool canLoad) {
-    if (canLoad && widget.status == LoadStatus.normal) {
+    if (canLoad && widget.status == LoadStatus.idle) {
       widget.onLoadMore();
       return true;
     }
